@@ -5,6 +5,7 @@ import android.arch.persistence.db.SupportSQLiteOpenHelper;
 import android.arch.persistence.room.DatabaseConfiguration;
 import android.arch.persistence.room.InvalidationTracker;
 import android.arch.persistence.room.Room;
+import android.content.DialogInterface;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -17,7 +18,8 @@ import org.w3c.dom.Text;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class AddCard extends AppCompatActivity {
+public class AddCard extends AppCompatActivity
+{
     private Button Save;
     private String cName;
     private String cType;
@@ -29,11 +31,12 @@ public class AddCard extends AppCompatActivity {
     private String cBlkM;
     private String cCM;
     private String cQuant;
-    private DatabaseHandler db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
-            .allowMainThreadQueries()
-            .build();
+    //private DatabaseHandler db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
+    //        .build();
+    private DatabaseHandler db;
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_card);
 
@@ -42,63 +45,105 @@ public class AddCard extends AppCompatActivity {
 
     }
 
-    public void saveClicked(View view) {
+    public void saveClicked(View view)
+    {
         Card Add = new Card();
 
-        EditText edit = findViewById(R.id.nameField);
+        final EditText edit = findViewById(R.id.nameField);
         cName = edit.getText().toString();
 
-        EditText editType = findViewById(R.id.typeField);
+        final EditText editType = findViewById(R.id.typeField);
         cType = editType.getText().toString();
 
-        EditText editNote = findViewById(R.id.noteField);
+        final EditText editNote = findViewById(R.id.noteField);
         cNote = editNote.getText().toString();
 
-        EditText editRed = findViewById(R.id.redMana);
+        final EditText editRed = findViewById(R.id.redMana);
         cRM =  editRed.getText().toString();
 
-        EditText editBlue = findViewById(R.id.blueMana);
+        final EditText editBlue = findViewById(R.id.blueMana);
         cBM = editBlue.getText().toString();
 
-        EditText editGreen = findViewById(R.id.greenMana);
+        final EditText editGreen = findViewById(R.id.greenMana);
         cGM = editGreen.getText().toString();
 
-        EditText editBlack = findViewById(R.id.blackMana);
+        final EditText editBlack = findViewById(R.id.blackMana);
         cBlkM = editBlack.getText().toString();
 
-        EditText editWhite = findViewById(R.id.whiteMana);
+        final EditText editWhite = findViewById(R.id.whiteMana);
         cWM = editWhite.getText().toString();
 
-        EditText editColorless = findViewById(R.id.colorlessField);
+        final EditText editColorless = findViewById(R.id.colorlessField);
         cCM = editColorless.getText().toString();
 
-        EditText editQuantity = findViewById(R.id.quantityField);
+        final EditText editQuantity = findViewById(R.id.quantityField);
         cQuant = editQuantity.getText().toString();
 
-        while (cName.equals(""))
+        if (cName.equals(""))
         {
-            try {
-                AlertDialog.Builder brokeDialog = new AlertDialog.Builder(this);
-                brokeDialog.setMessage("Card name required to add to database.");
-                brokeDialog.setPositiveButton("OK", null);
-                AlertDialog showD = brokeDialog.create();
+            AlertDialog.Builder brokeDialog = new AlertDialog.Builder(this);
+            brokeDialog.setMessage("Card name required to add to database.");
+            brokeDialog.setPositiveButton("OK", null);
+            AlertDialog showD = brokeDialog.create();
 
-                showD.show();
-            }
-
-            catch(WindowManager.BadTokenException e)
-            {
-                e.printStackTrace();
-            }
-            //edit.setText("");
-            edit.requestFocus();
-            cName = edit.getText().toString();
-
-            if (!cName.equals(""))
-            {
-                cName = edit.getText().toString();
-            }
+            showD.show();
+            return;
         }
+
+        Card Push = createCard(cName, cType, cNote, cRM, cBM, cGM, cBlkM, cWM, cCM, cQuant);
+
+        AlertDialog.Builder dialogbuild = new AlertDialog.Builder(this);
+        dialogbuild.setMessage("Card Info:\n" + "Name: " + Push.getName() + "\nType: " + Push.getType() + "\nNote: " + Push.getNote() + "\nRed: "
+                + String.valueOf(Push.getRedMana()) + "\nBlue: " + String.valueOf(Push.getBlueMana()) + "\nGreen: " + String.valueOf(Push.getGreenMana())
+                + "\nBlack: " + String.valueOf(Push.getBlackMana()) + "\nWhite: " + String.valueOf(Push.getWhiteMana()) + "\nColorless: " + String.valueOf(Push.getColorlessMana())
+                + "\nQuantity: " + String.valueOf(Push.getQuantity()));
+        dialogbuild.setPositiveButton("OK", null);
+        dialogbuild.setNegativeButton("Cancel", new DialogInterface.OnClickListener()
+        {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i)
+            {
+                edit.setText(cName);
+                editType.setText(cType);
+                editNote.setText(cNote);
+                editRed.setText(cRM);
+                editBlue.setText(cBM);
+                editGreen.setText(cGM);
+                editBlack.setText(cBlkM);
+                editWhite.setText(cWM);
+                editColorless.setText(cCM);
+                editQuantity.setText(cQuant);
+
+                return;
+            }
+        });
+
+        AlertDialog show = dialogbuild.create();
+        show.show();
+
+        edit.setText("");
+        editType.setText("");
+        editNote.setText("");
+        editRed.setText("");
+        editBlue.setText("");
+        editGreen.setText("");
+        editBlack.setText("");
+        editWhite.setText("");
+        editColorless.setText("");
+        editQuantity.setText("");
+
+        try
+        {
+            db.cardDao().insertCard(Push);
+        }
+        catch(NullPointerException e){
+            e.printStackTrace();
+        }
+    }
+
+    public Card createCard(String Name, String Type, String Note, String Red, String Blue, String Green, String Black, String White, String Colorless, String Quantity)
+    {
+        Card Add = new Card();
 
         Add.setName(cName);
         Add.setType(cType);
@@ -138,36 +183,6 @@ public class AddCard extends AppCompatActivity {
         {
             Add.setQuantity(Integer.parseInt(cQuant));
         }
-
-        AlertDialog.Builder dialogbuild = new AlertDialog.Builder(this);
-        dialogbuild.setMessage("Card Info:\n" + "Name: " + Add.getName() + "\nType: " + Add.getType() + "\nNote: " + Add.getNote() + "\nRed: "
-                + String.valueOf(Add.getRedMana()) + "\nBlue: " + String.valueOf(Add.getBlueMana()) + "\nGreen: " + String.valueOf(Add.getGreenMana())
-                + "\nBlack: " + String.valueOf(Add.getBlackMana()) + "\nWhite: " + String.valueOf(Add.getWhiteMana()) + "\nColorless: " + String.valueOf(Add.getColorlessMana())
-                + "\nQuantity: " + String.valueOf(Add.getQuantity()));
-        dialogbuild.setPositiveButton("OK", null);
-
-        AlertDialog show = dialogbuild.create();
-        show.show();
-
-        edit.setText("");
-        editType.setText("");
-        editNote.setText("");
-        editRed.setText("");
-        editBlue.setText("");
-        editGreen.setText("");
-        editBlack.setText("");
-        editWhite.setText("");
-        editColorless.setText("");
-        editQuantity.setText("");
-        try {
-                db.cardDao().insertCard(Add);
-        }
-        catch(NullPointerException e){
-            e.printStackTrace();
-        }
+        return Add;
     }
-
-
-
-
 }

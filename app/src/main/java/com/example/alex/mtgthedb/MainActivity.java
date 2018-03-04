@@ -8,19 +8,26 @@ import android.widget.Button;
 import android.content.Intent;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity
+{
 
     private Button add;
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        add = (Button) findViewById(R.id.cardButton);
     }
 
-    public void cardButtonClick(View v) {
+    public void cardButtonClick(View v)
+    {
         Intent i = new Intent(this, AddCard.class);
+        startActivity(i);
+    }
+
+    public void deleteButtonClick(View v)
+    {
+        Intent i = new Intent(this, DeleteCard.class);
         startActivity(i);
     }
 }

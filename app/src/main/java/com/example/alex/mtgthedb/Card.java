@@ -5,7 +5,8 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 
 @Entity(tableName = "cards")
-public class Card {
+public class Card
+{
 
     @PrimaryKey(autoGenerate = true)
     public int cardID;
@@ -87,9 +88,7 @@ public class Card {
         Name = name;
     }
 
-    public String getType() {
-        return Type;
-    }
+    public String getType() { return Type; }
 
     public void setType(String type) {
         Type = type;
