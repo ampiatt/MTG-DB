@@ -9,6 +9,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -73,6 +74,31 @@ public class AddCard extends AppCompatActivity {
 
         EditText editQuantity = findViewById(R.id.quantityField);
         cQuant = editQuantity.getText().toString();
+
+        while (cName.equals(""))
+        {
+            try {
+                AlertDialog.Builder brokeDialog = new AlertDialog.Builder(this);
+                brokeDialog.setMessage("Card name required to add to database.");
+                brokeDialog.setPositiveButton("OK", null);
+                AlertDialog showD = brokeDialog.create();
+
+                showD.show();
+            }
+
+            catch(WindowManager.BadTokenException e)
+            {
+                e.printStackTrace();
+            }
+            //edit.setText("");
+            edit.requestFocus();
+            cName = edit.getText().toString();
+
+            if (!cName.equals(""))
+            {
+                cName = edit.getText().toString();
+            }
+        }
 
         Add.setName(cName);
         Add.setType(cType);
