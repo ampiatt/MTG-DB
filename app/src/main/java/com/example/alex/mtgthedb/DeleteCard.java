@@ -1,5 +1,6 @@
 package com.example.alex.mtgthedb;
 
+import android.arch.persistence.room.Room;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -11,7 +12,9 @@ import org.w3c.dom.Text;
 
 public class DeleteCard extends AppCompatActivity
 {
-    DatabaseHandler db;
+    DatabaseHandler db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
+            .allowMainThreadQueries()
+            .build();
     Card returnedCard;
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -28,9 +31,17 @@ public class DeleteCard extends AppCompatActivity
         final EditText editSearch = findViewById(R.id.nameSearch);
         cardName = editSearch.getText().toString();
 
-        returnedCard = db.cardDao().findCard(cardName);
-        String output = "Card information: \nName: " + returnedCard.getName() + "\nType: " + returnedCard.getType();
+        try
+        {
+            returnedCard = db.cardDao().findCard(cardName);
+        }
 
+        catch(Exception e)
+        {
+            e.getCause();
+        }
+
+        String output = "Card information: \nName: " + returnedCard.getName() + "\nType: " + returnedCard.getType();
         TextView display =(TextView)findViewById(R.id.cardInformation);
         display.setText(output);
 

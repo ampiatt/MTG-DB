@@ -31,9 +31,10 @@ public class AddCard extends AppCompatActivity
     private String cBlkM;
     private String cCM;
     private String cQuant;
-    //private DatabaseHandler db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
-    //        .build();
-    private DatabaseHandler db;
+    private DatabaseHandler db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
+            .allowMainThreadQueries()
+            .build();
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
