@@ -31,13 +31,14 @@ public class AddCard extends AppCompatActivity
     private String cBlkM;
     private String cCM;
     private String cQuant;
-    private DatabaseHandler db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
-            .allowMainThreadQueries()
-            .build();
-
+    private DatabaseHandler db;
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
+        db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
+            .allowMainThreadQueries()
+            .build();
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_card);
 
@@ -48,7 +49,7 @@ public class AddCard extends AppCompatActivity
 
     public void saveClicked(View view)
     {
-        Card Add = new Card();
+        Card check = new Card();
 
         final EditText edit = findViewById(R.id.nameField);
         cName = edit.getText().toString();
@@ -133,12 +134,22 @@ public class AddCard extends AppCompatActivity
         editColorless.setText("");
         editQuantity.setText("");
 
-        try
+        check = db.cardDao().findCard(cName);
+        if (check != null)
+        {
+            check.setQuantity(check.getQuantity() + Integer.parseInt(cQuant));
+            db.cardDao().insertCard(check);
+            AlertDialog.Builder existsDialog = new AlertDialog.Builder(this);
+            existsDialog.setMessage("A card with that name already exists in the database.  Updating quantity of original card.");
+            existsDialog.setPositiveButton("OK", null);
+            AlertDialog showE = existsDialog.create();
+
+            showE.show();
+        }
+
+        else
         {
             db.cardDao().insertCard(Push);
-        }
-        catch(NullPointerException e){
-            e.printStackTrace();
         }
     }
 
