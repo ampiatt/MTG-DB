@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">MtG: The DB</string>
+    <string-array name="type_array">
+        <item>None</item>
+        <item>Creature</item>
+        <item>Enchant</item>
+        <item>Spell</item>
+        <item>Artifact</item>
+        <item>Mana</item>
+    </string-array>
 </resources>

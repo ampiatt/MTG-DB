@@ -10,8 +10,6 @@ import android.content.Intent;
 
 public class MainActivity extends AppCompatActivity
 {
-
-    private Button add;
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -28,6 +26,12 @@ public class MainActivity extends AppCompatActivity
     public void deleteButtonClick(View v)
     {
         Intent i = new Intent(this, DeleteCard.class);
+        startActivity(i);
+    }
+
+    public void browseButtonClick(View v)
+    {
+        Intent i = new Intent(this, Browse.class);
         startActivity(i);
     }
 }

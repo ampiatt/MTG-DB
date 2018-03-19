@@ -17,7 +17,9 @@
             </intent-filter>
         </activity>
         <activity android:name=".AddCard" />
-        <activity android:name=".DeleteCard"></activity>
+        <activity android:name=".DeleteCard" />
+        <activity android:name=".Browse" />
+        <activity android:name=".Results"></activity>
     </application>
 
 </manifest>

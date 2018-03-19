@@ -17,13 +17,12 @@ public class DeleteCard extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
+        this.setTitle("Delete Card");
         db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
             .allowMainThreadQueries()
             .build();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_delete_card);
-
-        this.setTitle("Delete Card");
     }
 
     protected void searchDatabase(View view)
@@ -48,7 +47,7 @@ public class DeleteCard extends AppCompatActivity
                     + "\nRed Mana: " + returnedCard.getRedMana() + "\nBlue Mana: " + returnedCard.getBlueMana() + "\nGreen Mana: " + returnedCard.getGreenMana() + "\nBlack Mana: "
                     + returnedCard.getBlackMana() + "\nWhite Mana: " + returnedCard.getWhiteMana() + "\nColorless Mana: " + returnedCard.getColorlessMana() + "\nQuantity: " + returnedCard.getQuantity();
 
-            TextView display = (TextView) findViewById(R.id.cardInformation);
+            TextView display = findViewById(R.id.cardInformation);
             display.setText(output);
 
             editSearch.setText("");

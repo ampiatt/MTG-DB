@@ -35,6 +35,7 @@ public class AddCard extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
+        this.setTitle("Add Card");
         db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
             .allowMainThreadQueries()
             .build();
