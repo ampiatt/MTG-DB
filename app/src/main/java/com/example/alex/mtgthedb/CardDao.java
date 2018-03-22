@@ -24,9 +24,8 @@ public interface CardDao
     //@Query("SELECT * FROM cards WHERE note LIKE '%bNote%'")
     //List<Card> getAllCardsNote(String bNote);
 
-    @Query("SELECT * FROM cards WHERE card_name LIKE '%name%'" + "AND note LIKE '%bNote%' " + "AND card_type LIKE '%bType%'" +
-            "AND red_mana  < 'red'" + " AND blue_mana < 'blue'" + " AND green_mana < 'green'" + " AND black_mana < 'black'" + "AND white_mana < 'white'" + " AND colorless_mana < 'colorless'")
-    List<Card> getAllCardsNameNote(String name, String bNote, String bType, int red, int blue, int green, int black, int white, int colorless);
+    @Query("SELECT * FROM cards WHERE card_type = :bType AND red_mana  < :red AND blue_mana < :blue AND green_mana < :green AND black_mana < :black AND white_mana < :white AND colorless_mana < :colorless")
+    List<Card> getAllCardsNameNote(String bType, int red, int blue, int green, int black, int white, int colorless);
 
 
 

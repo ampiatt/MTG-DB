@@ -104,10 +104,16 @@ public class Browse extends AppCompatActivity {
             colorless = 1;
         }
 
-        FoundCards = db.cardDao().getAllCardsNameNote(bName, bNote, bType, red, blue, green, black, white, colorless);
+        FoundCards = db.cardDao().getAllCardsNameNote(bType, red, blue, green, black, white, colorless);
 
-        Intent i = new Intent(this, Results.class);
-        startActivity(i);
+        AlertDialog.Builder existsDialog = new AlertDialog.Builder(this);
+        existsDialog.setMessage("Found cards size = " + FoundCards.size());
+        existsDialog.setPositiveButton("OK", null);
+        AlertDialog showE = existsDialog.create();
+
+        showE.show();
+        //Intent i = new Intent(this, Results.class);
+        //startActivity(i);
     }
 
     protected String[] printFoundCards()
