@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity
 
     public void browseButtonClick(View v)
     {
-        Intent i = new Intent(this, Browse.class);
+        Intent i = new Intent(this, reBrowse.class);
         startActivity(i);
     }
 }
