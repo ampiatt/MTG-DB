@@ -18,7 +18,8 @@
         </activity>
         <activity android:name=".AddCard" />
         <activity android:name=".DeleteCard" />
-        <activity android:name=".reBrowse"></activity>
+        <activity android:name=".reBrowse" />
+        <activity android:name=".bColor"></activity>
     </application>
 
 </manifest>

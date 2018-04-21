@@ -21,11 +21,23 @@ public interface CardDao
     @Query("SELECT * FROM cards WHERE card_type = :type")
     List<Card> getAllCardsType(String type);
 
-    //@Query("SELECT * FROM cards WHERE note LIKE '%bNote%'")
-    //List<Card> getAllCardsNote(String bNote);
+    @Query("SELECT * FROM cards WHERE blue_mana > 0")
+    List<Card> Sanji();
 
-    @Query("SELECT * FROM cards WHERE card_name = :name AND note = :bNote AND card_type = :bType AND red_mana  < :red AND blue_mana < :blue AND green_mana < :green AND black_mana < :black AND white_mana < :white AND colorless_mana < :colorless")
-    Card getAllCardsNameNote(String name, String bNote, String bType, int red, int blue, int green, int black, int white, int colorless);
+    @Query("SELECT * FROM cards WHERE red_mana > 0")
+    List<Card> getAllRed();
+
+    @Query("SELECT * FROM cards WHERE white_mana > 0")
+    List<Card> getAllWhite();
+
+    @Query("SELECT * FROM cards WHERE black_mana > 0")
+    List<Card> getAllBlack();
+
+    @Query("SELECT * FROM cards WHERE colorless_mana > 0")
+    List<Card> getAllColorless();
+
+    @Query("SELECT * FROM cards WHERE green_mana")
+    List<Card> getAllGreen();
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertCard(Card card);

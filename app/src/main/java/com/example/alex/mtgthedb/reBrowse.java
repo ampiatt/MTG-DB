@@ -1,6 +1,8 @@
 package com.example.alex.mtgthedb;
 
 import android.arch.persistence.room.Room;
+import android.content.Intent;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -28,11 +30,20 @@ public class reBrowse extends AppCompatActivity {
     }
 
     public void browseByType(View view) {
-        List<Card> typeCards = null;
-        String bType = "";
-
         Spinner browseType = findViewById(R.id.typSpinner);
-        bType = browseType.getSelectedItem().toString();
-        typeCards = db.cardDao().getAllCardsType(bType);
+        String bType = browseType.getSelectedItem().toString();
+        try
+        {
+            List<Card> typeCards = db.cardDao().getAllCardsType(bType);
+        }
+        catch(Exception e)
+        {
+            e.getCause();
+        }
+    }
+
+    public void browseByColor(View view) {
+        Intent i = new Intent(this, bColor.class);
+        startActivity(i);
     }
 }

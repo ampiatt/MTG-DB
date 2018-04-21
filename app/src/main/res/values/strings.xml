@@ -2,10 +2,11 @@
     <string name="app_name">MtG: The DB</string>
     <string-array name="type_array">
         <item>None</item>
-        <item>Creature</item>
-        <item>Enchant</item>
-        <item>Spell</item>
-        <item>Artifact</item>
-        <item>Mana</item>
+        <item>CREATURE</item>
+        <item>ENCHANT</item>
+        <item>SORCERY</item>
+        <item>INSTANT</item>
+        <item>ARTIFACT</item>
+        <item>MANA</item>
     </string-array>
 </resources>

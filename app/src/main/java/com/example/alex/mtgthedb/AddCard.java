@@ -11,8 +11,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 
 import org.w3c.dom.Text;
 
@@ -46,17 +48,23 @@ public class AddCard extends AppCompatActivity
         this.setTitle("Add New Card");
         Save = (Button) findViewById(R.id.saveButton);
 
+        Spinner typeSpinner = (Spinner) findViewById(R.id.typeSpinner);
+        ArrayAdapter<CharSequence> typeAdapter = ArrayAdapter.createFromResource(this,
+                R.array.type_array, android.R.layout.simple_spinner_dropdown_item);
+        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        typeSpinner.setAdapter(typeAdapter);
+
     }
 
     public void saveClicked(View view)
     {
+        final Spinner editType = findViewById(R.id.typeSpinner);
+        String cType = editType.getSelectedItem().toString();
+
         Card check = new Card();
 
         final EditText edit = findViewById(R.id.nameField);
         cName = edit.getText().toString();
-
-        final EditText editType = findViewById(R.id.typeField);
-        cType = editType.getText().toString();
 
         final EditText editNote = findViewById(R.id.noteField);
         cNote = editNote.getText().toString();
@@ -81,6 +89,8 @@ public class AddCard extends AppCompatActivity
 
         final EditText editQuantity = findViewById(R.id.quantityField);
         cQuant = editQuantity.getText().toString();
+
+        final int selection = editType.getSelectedItemPosition();
 
         if (cName.equals(""))
         {
@@ -107,7 +117,7 @@ public class AddCard extends AppCompatActivity
             public void onClick(DialogInterface dialogInterface, int i)
             {
                 edit.setText(cName);
-                editType.setText(cType);
+                editType.setSelection(selection);
                 editNote.setText(cNote);
                 editRed.setText(cRM);
                 editBlue.setText(cBM);
@@ -124,8 +134,8 @@ public class AddCard extends AppCompatActivity
         AlertDialog show = dialogbuild.create();
         show.show();
 
+        editType.setSelection(0);
         edit.setText("");
-        editType.setText("");
         editNote.setText("");
         editRed.setText("");
         editBlue.setText("");
