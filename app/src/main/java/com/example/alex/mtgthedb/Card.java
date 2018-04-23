@@ -4,10 +4,9 @@ import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 
-@Entity(tableName = "cards")
+@Entity(tableName = "newCards")
 public class Card
 {
-
     @PrimaryKey(autoGenerate = true)
     public int cardID;
 
@@ -41,6 +40,9 @@ public class Card
     @ColumnInfo(name = "quantity")
     public int Quantity;
 
+    @ColumnInfo(name = "deck_quantity")
+    public int DeckQuantity;
+
     public Card()
     {
 
@@ -54,6 +56,7 @@ public class Card
         whiteMana = 0;
         colorlessMana = 0;
         Quantity = 0;
+        DeckQuantity = 0;
     }
 
     public String getNote() {
@@ -142,4 +145,7 @@ public class Card
         this.colorlessMana = colorlessMana;
     }
 
+    public int getDeckQuantity() { return DeckQuantity; }
+
+    public void setDeckQuantity(int deckQuantity) { this.DeckQuantity = deckQuantity; }
 }

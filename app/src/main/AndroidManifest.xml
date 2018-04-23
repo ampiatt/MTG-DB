@@ -19,7 +19,14 @@
         <activity android:name=".AddCard" />
         <activity android:name=".DeleteCard" />
         <activity android:name=".reBrowse" />
-        <activity android:name=".bColor"></activity>
+        <activity android:name=".bColor" />
+        <activity android:name=".typeBrowseResults" />
+        <activity android:name=".noteBrowseResults" />
+        <activity android:name=".ColorResults" />
+        <activity android:name=".DeckManager" />
+        <activity android:name=".addToDeck" />
+        <activity android:name=".DeleteFromDeck" />
+        <activity android:name=".ShowFullDeck"></activity>
     </application>
 
 </manifest>

@@ -38,7 +38,7 @@ public class AddCard extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         this.setTitle("Add Card");
-        db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
+        db = Room.databaseBuilder(this, DatabaseHandler.class, "newCards")
             .allowMainThreadQueries()
             .build();
 
@@ -59,15 +59,17 @@ public class AddCard extends AppCompatActivity
     public void saveClicked(View view)
     {
         final Spinner editType = findViewById(R.id.typeSpinner);
-        String cType = editType.getSelectedItem().toString();
+        cType = editType.getSelectedItem().toString();
 
         Card check = new Card();
 
+        //convert all free text to uppercase to ensure correct searching
         final EditText edit = findViewById(R.id.nameField);
-        cName = edit.getText().toString();
+        cName = edit.getText().toString().toUpperCase();
 
+        //convert all free text to uppercae to ensure correct searching
         final EditText editNote = findViewById(R.id.noteField);
-        cNote = editNote.getText().toString();
+        cNote = editNote.getText().toString().toUpperCase();
 
         final EditText editRed = findViewById(R.id.redMana);
         cRM =  editRed.getText().toString();
@@ -103,7 +105,7 @@ public class AddCard extends AppCompatActivity
             return;
         }
 
-        Card Push = createCard(cName, cType, cNote, cRM, cBM, cGM, cBlkM, cWM, cCM, cQuant);
+        Card Push = createCard(cName, cType, cNote, cRM, cBM, cGM, cBlkM, cWM, cCM, cQuant, 0);
 
         AlertDialog.Builder dialogbuild = new AlertDialog.Builder(this);
         dialogbuild.setMessage("Card Info:\n" + "Name: " + Push.getName() + "\nType: " + Push.getType() + "\nNote: " + Push.getNote() + "\nRed: "
@@ -164,13 +166,14 @@ public class AddCard extends AppCompatActivity
         }
     }
 
-    public Card createCard(String Name, String Type, String Note, String Red, String Blue, String Green, String Black, String White, String Colorless, String Quantity)
+    public Card createCard(String Name, String Type, String Note, String Red, String Blue, String Green, String Black, String White, String Colorless, String Quantity, int DeckQuant)
     {
         Card Add = new Card();
 
         Add.setName(cName);
         Add.setType(cType);
         Add.setNote(cNote);
+        Add.setDeckQuantity(0);
 
         if (!cRM.equals(""))
         {

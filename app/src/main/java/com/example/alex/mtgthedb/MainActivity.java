@@ -34,6 +34,11 @@ public class MainActivity extends AppCompatActivity
         Intent i = new Intent(this, reBrowse.class);
         startActivity(i);
     }
+
+    public void deckManagerClick(View v) {
+        Intent i = new Intent(this, DeckManager.class);
+        startActivity(i);
+    }
 }
 
 

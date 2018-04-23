@@ -18,7 +18,7 @@ public class DeleteCard extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         this.setTitle("Delete Card");
-        db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
+        db = Room.databaseBuilder(this, DatabaseHandler.class, "newCards")
             .allowMainThreadQueries()
             .build();
         super.onCreate(savedInstanceState);
@@ -29,7 +29,7 @@ public class DeleteCard extends AppCompatActivity
     {
         String cardName = "";
         final EditText editSearch = findViewById(R.id.nameSearch);
-        cardName = editSearch.getText().toString();
+        cardName = editSearch.getText().toString().toUpperCase();
 
         try
         {
@@ -45,7 +45,8 @@ public class DeleteCard extends AppCompatActivity
         {
             String output = "Card information: \nName: " + returnedCard.getName() + "\nType: " + returnedCard.getType() + "\nPersonal Note: " + returnedCard.getNote()
                     + "\nRed Mana: " + returnedCard.getRedMana() + "\nBlue Mana: " + returnedCard.getBlueMana() + "\nGreen Mana: " + returnedCard.getGreenMana() + "\nBlack Mana: "
-                    + returnedCard.getBlackMana() + "\nWhite Mana: " + returnedCard.getWhiteMana() + "\nColorless Mana: " + returnedCard.getColorlessMana() + "\nQuantity: " + returnedCard.getQuantity();
+                    + returnedCard.getBlackMana() + "\nWhite Mana: " + returnedCard.getWhiteMana() + "\nColorless Mana: " + returnedCard.getColorlessMana() + "\nQuantity: " + returnedCard.getQuantity()
+                    + "\nDeck Quantity: " + returnedCard.getDeckQuantity();
 
             TextView display = findViewById(R.id.cardInformation);
             display.setText(output);
