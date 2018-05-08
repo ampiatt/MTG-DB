@@ -1,0 +1,1938 @@
+diff --git a/.~lock.mtgAgileProjectDoc.docx# b/.~lock.mtgAgileProjectDoc.docx#
+new file mode 100644
+index 0000000..1add052
+--- /dev/null
++++ b/.~lock.mtgAgileProjectDoc.docx#
+@@ -0,0 +1 @@
++,alex,beta.attlocal.net,23.04.2018 03:44,file:///home/alex/.config/libreoffice/4;
+\ No newline at end of file
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 4839b04..024cd56 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -18,8 +18,15 @@
+         </activity>
+         <activity android:name=".AddCard" />
+         <activity android:name=".DeleteCard" />
+-        <activity android:name=".Browse" />
+-        <activity android:name=".Results"></activity>
++        <activity android:name=".reBrowse" />
++        <activity android:name=".bColor" />
++        <activity android:name=".typeBrowseResults" />
++        <activity android:name=".noteBrowseResults" />
++        <activity android:name=".ColorResults" />
++        <activity android:name=".DeckManager" />
++        <activity android:name=".addToDeck" />
++        <activity android:name=".DeleteFromDeck" />
++        <activity android:name=".ShowFullDeck"></activity>
+     </application>
+ 
+ </manifest>
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/AddCard.java b/app/src/main/java/com/example/alex/mtgthedb/AddCard.java
+index 001d07b..85b0495 100644
+--- a/app/src/main/java/com/example/alex/mtgthedb/AddCard.java
++++ b/app/src/main/java/com/example/alex/mtgthedb/AddCard.java
+@@ -11,8 +11,10 @@ import android.support.v7.app.AppCompatActivity;
+ import android.os.Bundle;
+ import android.view.View;
+ import android.view.WindowManager;
++import android.widget.ArrayAdapter;
+ import android.widget.Button;
+ import android.widget.EditText;
++import android.widget.Spinner;
+ 
+ import org.w3c.dom.Text;
+ 
+@@ -36,7 +38,7 @@ public class AddCard extends AppCompatActivity
+     protected void onCreate(Bundle savedInstanceState)
+     {
+         this.setTitle("Add Card");
+-        db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
++        db = Room.databaseBuilder(this, DatabaseHandler.class, "newCards")
+             .allowMainThreadQueries()
+             .build();
+ 
+@@ -46,20 +48,28 @@ public class AddCard extends AppCompatActivity
+         this.setTitle("Add New Card");
+         Save = (Button) findViewById(R.id.saveButton);
+ 
++        Spinner typeSpinner = (Spinner) findViewById(R.id.typeSpinner);
++        ArrayAdapter<CharSequence> typeAdapter = ArrayAdapter.createFromResource(this,
++                R.array.type_array, android.R.layout.simple_spinner_dropdown_item);
++        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
++        typeSpinner.setAdapter(typeAdapter);
++
+     }
+ 
+     public void saveClicked(View view)
+     {
++        final Spinner editType = findViewById(R.id.typeSpinner);
++        cType = editType.getSelectedItem().toString();
++
+         Card check = new Card();
+ 
++        //convert all free text to uppercase to ensure correct searching
+         final EditText edit = findViewById(R.id.nameField);
+-        cName = edit.getText().toString();
+-
+-        final EditText editType = findViewById(R.id.typeField);
+-        cType = editType.getText().toString();
++        cName = edit.getText().toString().toUpperCase();
+ 
++        //convert all free text to uppercae to ensure correct searching
+         final EditText editNote = findViewById(R.id.noteField);
+-        cNote = editNote.getText().toString();
++        cNote = editNote.getText().toString().toUpperCase();
+ 
+         final EditText editRed = findViewById(R.id.redMana);
+         cRM =  editRed.getText().toString();
+@@ -82,6 +92,8 @@ public class AddCard extends AppCompatActivity
+         final EditText editQuantity = findViewById(R.id.quantityField);
+         cQuant = editQuantity.getText().toString();
+ 
++        final int selection = editType.getSelectedItemPosition();
++
+         if (cName.equals(""))
+         {
+             AlertDialog.Builder brokeDialog = new AlertDialog.Builder(this);
+@@ -93,7 +105,7 @@ public class AddCard extends AppCompatActivity
+             return;
+         }
+ 
+-        Card Push = createCard(cName, cType, cNote, cRM, cBM, cGM, cBlkM, cWM, cCM, cQuant);
++        Card Push = createCard(cName, cType, cNote, cRM, cBM, cGM, cBlkM, cWM, cCM, cQuant, 0);
+ 
+         AlertDialog.Builder dialogbuild = new AlertDialog.Builder(this);
+         dialogbuild.setMessage("Card Info:\n" + "Name: " + Push.getName() + "\nType: " + Push.getType() + "\nNote: " + Push.getNote() + "\nRed: "
+@@ -107,7 +119,7 @@ public class AddCard extends AppCompatActivity
+             public void onClick(DialogInterface dialogInterface, int i)
+             {
+                 edit.setText(cName);
+-                editType.setText(cType);
++                editType.setSelection(selection);
+                 editNote.setText(cNote);
+                 editRed.setText(cRM);
+                 editBlue.setText(cBM);
+@@ -124,8 +136,8 @@ public class AddCard extends AppCompatActivity
+         AlertDialog show = dialogbuild.create();
+         show.show();
+ 
++        editType.setSelection(0);
+         edit.setText("");
+-        editType.setText("");
+         editNote.setText("");
+         editRed.setText("");
+         editBlue.setText("");
+@@ -154,13 +166,14 @@ public class AddCard extends AppCompatActivity
+         }
+     }
+ 
+-    public Card createCard(String Name, String Type, String Note, String Red, String Blue, String Green, String Black, String White, String Colorless, String Quantity)
++    public Card createCard(String Name, String Type, String Note, String Red, String Blue, String Green, String Black, String White, String Colorless, String Quantity, int DeckQuant)
+     {
+         Card Add = new Card();
+ 
+         Add.setName(cName);
+         Add.setType(cType);
+         Add.setNote(cNote);
++        Add.setDeckQuantity(0);
+ 
+         if (!cRM.equals(""))
+         {
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/Browse.java b/app/src/main/java/com/example/alex/mtgthedb/Browse.java
+deleted file mode 100644
+index 754d154..0000000
+--- a/app/src/main/java/com/example/alex/mtgthedb/Browse.java
++++ /dev/null
+@@ -1,130 +0,0 @@
+-package com.example.alex.mtgthedb;
+-
+-import android.arch.persistence.room.Room;
+-import android.content.Intent;
+-import android.support.v7.app.AlertDialog;
+-import android.support.v7.app.AppCompatActivity;
+-import android.os.Bundle;
+-import android.view.View;
+-import android.widget.ArrayAdapter;
+-import android.widget.CheckBox;
+-import android.widget.EditText;
+-import android.widget.Spinner;
+-
+-import java.lang.reflect.Array;
+-import java.util.List;
+-
+-public class Browse extends AppCompatActivity {
+-    private DatabaseHandler db;
+-    private List<Card> FoundCards;
+-
+-    @Override
+-    protected void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        setContentView(R.layout.activity_browse);
+-
+-        this.setTitle("Browse Collection");
+-
+-        db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
+-                .allowMainThreadQueries()
+-                .build();
+-
+-        Spinner typeSpinner = (Spinner) findViewById(R.id.typeSpinner);
+-        ArrayAdapter<CharSequence> typeAdapter = ArrayAdapter.createFromResource(this,
+-                R.array.type_array, android.R.layout.simple_spinner_dropdown_item);
+-        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+-        typeSpinner.setAdapter(typeAdapter);
+-    }
+-
+-    protected void browseClicked(View view)
+-    {
+-        browseData();
+-    }
+-
+-    protected void browseData()
+-    {
+-        String bName;
+-        String bNote;
+-        String bType;
+-        int white = -1;
+-        int black = -1;
+-        int blue = -1;
+-        int red = -1;
+-        int green = -1;
+-        int colorless = -1;
+-
+-        final EditText browseName = findViewById(R.id.nameBrowse);
+-        bName = browseName.getText().toString();
+-
+-        final EditText browseNote = findViewById(R.id.noteBrowse);
+-        bNote = browseNote.getText().toString();
+-
+-        Spinner browseType = findViewById(R.id.typeSpinner);
+-        bType = browseType.getSelectedItem().toString();
+-
+-        if (bType.equals("None"))
+-        {
+-            bType = "";
+-        }
+-
+-        CheckBox browseWhite = findViewById(R.id.checkWhite);
+-        CheckBox browseBlack = findViewById(R.id.checkBlack);
+-        CheckBox browseRed = findViewById(R.id.checkRed);
+-        CheckBox browseGreen = findViewById(R.id.checkGreen);
+-        CheckBox browseBlue = findViewById(R.id.checkBlue);
+-        CheckBox browseColorless = findViewById(R.id.checkColorless);
+-
+-        if (browseWhite.isChecked())
+-        {
+-            white = 1;
+-        }
+-
+-        if (browseBlack.isChecked())
+-        {
+-            black = 1;
+-        }
+-
+-        if (browseRed.isChecked())
+-        {
+-            red = 1;
+-        }
+-
+-        if (browseGreen.isChecked())
+-        {
+-            green = 1;
+-        }
+-
+-        if (browseBlue.isChecked())
+-        {
+-            blue = 1;
+-        }
+-
+-        if (browseColorless.isChecked())
+-        {
+-            colorless = 1;
+-        }
+-
+-        FoundCards = db.cardDao().getAllCardsNameNote(bType, red, blue, green, black, white, colorless);
+-
+-        AlertDialog.Builder existsDialog = new AlertDialog.Builder(this);
+-        existsDialog.setMessage("Found cards size = " + FoundCards.size());
+-        existsDialog.setPositiveButton("OK", null);
+-        AlertDialog showE = existsDialog.create();
+-
+-        showE.show();
+-        //Intent i = new Intent(this, Results.class);
+-        //startActivity(i);
+-    }
+-
+-    protected String[] printFoundCards()
+-    {
+-
+-        String[] results = new String[FoundCards.size()];
+-        for (int i = 0; i < FoundCards.size(); ++i)
+-        {
+-            results[i] = "Card Info: \nName: " +  FoundCards.get(i).getName() + "\nType: " + FoundCards.get(i).getType() + "\nNote: " + FoundCards.get(i).getNote();
+-        }
+-
+-        return results;
+-    }
+-}
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/Card.java b/app/src/main/java/com/example/alex/mtgthedb/Card.java
+index 4b989bf..2e8ec03 100644
+--- a/app/src/main/java/com/example/alex/mtgthedb/Card.java
++++ b/app/src/main/java/com/example/alex/mtgthedb/Card.java
+@@ -4,10 +4,9 @@ import android.arch.persistence.room.ColumnInfo;
+ import android.arch.persistence.room.Entity;
+ import android.arch.persistence.room.PrimaryKey;
+ 
+-@Entity(tableName = "cards")
++@Entity(tableName = "newCards")
+ public class Card
+ {
+-
+     @PrimaryKey(autoGenerate = true)
+     public int cardID;
+ 
+@@ -41,6 +40,9 @@ public class Card
+     @ColumnInfo(name = "quantity")
+     public int Quantity;
+ 
++    @ColumnInfo(name = "deck_quantity")
++    public int DeckQuantity;
++
+     public Card()
+     {
+ 
+@@ -54,6 +56,7 @@ public class Card
+         whiteMana = 0;
+         colorlessMana = 0;
+         Quantity = 0;
++        DeckQuantity = 0;
+     }
+ 
+     public String getNote() {
+@@ -142,4 +145,7 @@ public class Card
+         this.colorlessMana = colorlessMana;
+     }
+ 
++    public int getDeckQuantity() { return DeckQuantity; }
++
++    public void setDeckQuantity(int deckQuantity) { this.DeckQuantity = deckQuantity; }
+ }
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/CardAdapter.java b/app/src/main/java/com/example/alex/mtgthedb/CardAdapter.java
+new file mode 100644
+index 0000000..c7bf73d
+--- /dev/null
++++ b/app/src/main/java/com/example/alex/mtgthedb/CardAdapter.java
+@@ -0,0 +1,46 @@
++package com.example.alex.mtgthedb;
++
++import android.support.v7.widget.RecyclerView;
++import android.text.Layout;
++import android.view.LayoutInflater;
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.TextView;
++
++import java.util.List;
++
++
++class CardAdapter extends RecyclerView.Adapter<CardAdapter.ViewHolder> {
++    List<Card> returnedCards;
++
++    public CardAdapter(List<Card> browseCards) {
++        this.returnedCards = browseCards;
++    }
++    @Override
++    public CardAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
++        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.card_row, parent, false );
++        return new ViewHolder(view);
++    }
++
++    @Override
++    public void onBindViewHolder(CardAdapter.ViewHolder holder, int position) {
++        holder.fCardName.setText(returnedCards.get(position).getName()  + "\nType: " + returnedCards.get(position).getType() + "\nQuantity: "
++                + returnedCards.get(position).getQuantity() + "\nDeck Quantity: " + returnedCards.get(position).getDeckQuantity() + "\n\n");
++    }
++
++    @Override
++    public int getItemCount() {
++        return returnedCards.size();
++    }
++
++    public class ViewHolder extends RecyclerView.ViewHolder {
++        public TextView fCardName;
++        public ViewHolder(View itemView) {
++            super(itemView);
++
++            fCardName = itemView.findViewById(R.id.FCardName);
++        }
++    }
++}
++
++
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/CardDao.java b/app/src/main/java/com/example/alex/mtgthedb/CardDao.java
+index 4c5ea63..bd70859 100644
+--- a/app/src/main/java/com/example/alex/mtgthedb/CardDao.java
++++ b/app/src/main/java/com/example/alex/mtgthedb/CardDao.java
+@@ -7,28 +7,45 @@ import android.arch.persistence.room.OnConflictStrategy;
+ import android.arch.persistence.room.Query;
+ import android.arch.persistence.room.Update;
+ 
++import java.util.ArrayList;
+ import java.util.List;
+ 
+ @Dao
+ public interface CardDao
+ {
+-    @Query("SELECT * FROM cards")
++    @Query("SELECT * FROM newCards")
+     List<Card> getAllCards();
+ 
+-    @Query("SELECT * FROM cards WHERE card_name = :name")
++    @Query("SELECT * FROM newCards WHERE card_name = :name")
+     Card findCard(String name);
+ 
+-    @Query("SELECT * FROM cards WHERE card_type = :type")
++    @Query("SELECT * FROM newCards WHERE card_type = :type")
+     List<Card> getAllCardsType(String type);
+ 
+-    //@Query("SELECT * FROM cards WHERE note LIKE '%bNote%'")
+-    //List<Card> getAllCardsNote(String bNote);
++    @Query("SELECT * FROM newCards WHERE blue_mana > 0")
++    List<Card> Sanji();
+ 
+-    @Query("SELECT * FROM cards WHERE card_type = :bType AND red_mana  < :red AND blue_mana < :blue AND green_mana < :green AND black_mana < :black AND white_mana < :white AND colorless_mana < :colorless")
+-    List<Card> getAllCardsNameNote(String bType, int red, int blue, int green, int black, int white, int colorless);
++    @Query("SELECT * FROM newCards WHERE red_mana > 0")
++    List<Card> getAllRed();
+ 
++    @Query("SELECT * FROM newCards WHERE white_mana > 0")
++    List<Card> getAllWhite();
+ 
++    @Query("SELECT * FROM newCards WHERE black_mana > 0")
++    List<Card> getAllBlack();
+ 
++    @Query("SELECT * FROM newCards WHERE colorless_mana > 0")
++    List<Card> getAllColorless();
++
++    @Query("SELECT * FROM newCards WHERE green_mana")
++    List<Card> getAllGreen();
++
++    @Query("SELECT * FROM newCards WHERE note = :cNote")
++    List<Card> getAllNote(String cNote);
++
++    @Query("SELECT * FROM newCards WHERE deck_quantity > 0")
++    List<Card> getAllInDeck();
++    
+     @Insert(onConflict = OnConflictStrategy.REPLACE)
+     void insertCard(Card card);
+ 
+@@ -37,5 +54,4 @@ public interface CardDao
+ 
+     @Update()
+     void updateCard(Card card);
+-
+ }
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/ColorResults.java b/app/src/main/java/com/example/alex/mtgthedb/ColorResults.java
+new file mode 100644
+index 0000000..a261790
+--- /dev/null
++++ b/app/src/main/java/com/example/alex/mtgthedb/ColorResults.java
+@@ -0,0 +1,85 @@
++package com.example.alex.mtgthedb;
++
++import android.arch.persistence.room.Room;
++import android.support.v7.app.AppCompatActivity;
++import android.os.Bundle;
++import android.support.v7.widget.LinearLayoutManager;
++import android.support.v7.widget.RecyclerView;
++
++import java.util.List;
++
++public class ColorResults extends AppCompatActivity {
++    RecyclerView colorViewList;
++    RecyclerView.Adapter colorAdapter;
++    DatabaseHandler db;
++
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_color_results);
++
++        int passedColorInd = 99;
++        db = Room.databaseBuilder(this, DatabaseHandler.class, "newCards")
++                .allowMainThreadQueries()
++                .build();
++
++        Bundle colorExtras = getIntent().getExtras();
++
++        if (colorExtras != null) {
++            passedColorInd = colorExtras.getInt("color_value");
++        }
++
++        //red
++        //blue
++        //green
++        //black
++        //white
++        //colorless
++        switch (passedColorInd) {
++            case 1:
++                List<Card> redResults = db.cardDao().getAllRed();
++                colorViewList = findViewById(R.id.recyclerview);
++                colorViewList.setLayoutManager(new LinearLayoutManager(this));
++                colorAdapter = new CardAdapter(redResults);
++                colorViewList.setAdapter(colorAdapter);
++                break;
++            case 2:
++                List<Card> blueResults = db.cardDao().Sanji();
++                colorViewList = findViewById(R.id.recyclerview);
++                colorViewList.setLayoutManager(new LinearLayoutManager(this));
++                colorAdapter = new CardAdapter(blueResults);
++                colorViewList.setAdapter(colorAdapter);
++                break;
++            case 3:
++                List<Card> greenResults = db.cardDao().getAllGreen();
++                colorViewList = findViewById(R.id.recyclerview);
++                colorViewList.setLayoutManager(new LinearLayoutManager(this));
++                colorAdapter = new CardAdapter(greenResults);
++                colorViewList.setAdapter(colorAdapter);
++                break;
++            case 4:
++                List<Card> blackResults = db.cardDao().getAllBlack();
++                colorViewList = findViewById(R.id.recyclerview);
++                colorViewList.setLayoutManager(new LinearLayoutManager(this));
++                colorAdapter = new CardAdapter(blackResults);
++                colorViewList.setAdapter(colorAdapter);
++                break;
++            case 5:
++                List<Card> whiteResults = db.cardDao().getAllWhite();
++                colorViewList = findViewById(R.id.recyclerview);
++                colorViewList.setLayoutManager(new LinearLayoutManager(this));
++                colorAdapter = new CardAdapter(whiteResults);
++                colorViewList.setAdapter(colorAdapter);
++                break;
++            case 6:
++                List<Card> colorlessResults = db.cardDao().getAllColorless();
++                colorViewList = findViewById(R.id.recyclerview);
++                colorViewList.setLayoutManager(new LinearLayoutManager(this));
++                colorAdapter = new CardAdapter(colorlessResults);
++                colorViewList.setAdapter(colorAdapter);
++                break;
++            default:
++                return;
++        }
++    }
++}
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/DeckManager.java b/app/src/main/java/com/example/alex/mtgthedb/DeckManager.java
+new file mode 100644
+index 0000000..3812563
+--- /dev/null
++++ b/app/src/main/java/com/example/alex/mtgthedb/DeckManager.java
+@@ -0,0 +1,38 @@
++package com.example.alex.mtgthedb;
++
++import android.arch.persistence.room.Room;
++import android.content.Intent;
++import android.support.v7.app.AppCompatActivity;
++import android.os.Bundle;
++import android.view.View;
++
++public class DeckManager extends AppCompatActivity {
++    DatabaseHandler db;
++
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_deck_manager);
++        this.setTitle("Deck Manager");
++
++        db = Room.databaseBuilder(this, DatabaseHandler.class, "newCards")
++                .allowMainThreadQueries()
++                .build();
++
++    }
++
++    public void addToDeckButton(View view) {
++        Intent i = new Intent(this, addToDeck.class);
++        startActivity(i);
++    }
++
++    public void deleteFromDeckButton(View view) {
++        Intent i = new Intent(this, DeleteFromDeck.class);
++        startActivity(i);
++    }
++
++    public void viewDeckButton(View view) {
++        Intent i = new Intent(this, ShowFullDeck.class);
++        startActivity(i);
++    }
++}
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/DeleteCard.java b/app/src/main/java/com/example/alex/mtgthedb/DeleteCard.java
+index 3c8b77e..ae22ce8 100644
+--- a/app/src/main/java/com/example/alex/mtgthedb/DeleteCard.java
++++ b/app/src/main/java/com/example/alex/mtgthedb/DeleteCard.java
+@@ -18,7 +18,7 @@ public class DeleteCard extends AppCompatActivity
+     protected void onCreate(Bundle savedInstanceState)
+     {
+         this.setTitle("Delete Card");
+-        db = Room.databaseBuilder(this, DatabaseHandler.class, "cards")
++        db = Room.databaseBuilder(this, DatabaseHandler.class, "newCards")
+             .allowMainThreadQueries()
+             .build();
+         super.onCreate(savedInstanceState);
+@@ -29,7 +29,7 @@ public class DeleteCard extends AppCompatActivity
+     {
+         String cardName = "";
+         final EditText editSearch = findViewById(R.id.nameSearch);
+-        cardName = editSearch.getText().toString();
++        cardName = editSearch.getText().toString().toUpperCase();
+ 
+         try
+         {
+@@ -45,7 +45,8 @@ public class DeleteCard extends AppCompatActivity
+         {
+             String output = "Card information: \nName: " + returnedCard.getName() + "\nType: " + returnedCard.getType() + "\nPersonal Note: " + returnedCard.getNote()
+                     + "\nRed Mana: " + returnedCard.getRedMana() + "\nBlue Mana: " + returnedCard.getBlueMana() + "\nGreen Mana: " + returnedCard.getGreenMana() + "\nBlack Mana: "
+-                    + returnedCard.getBlackMana() + "\nWhite Mana: " + returnedCard.getWhiteMana() + "\nColorless Mana: " + returnedCard.getColorlessMana() + "\nQuantity: " + returnedCard.getQuantity();
++                    + returnedCard.getBlackMana() + "\nWhite Mana: " + returnedCard.getWhiteMana() + "\nColorless Mana: " + returnedCard.getColorlessMana() + "\nQuantity: " + returnedCard.getQuantity()
++                    + "\nDeck Quantity: " + returnedCard.getDeckQuantity();
+ 
+             TextView display = findViewById(R.id.cardInformation);
+             display.setText(output);
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/DeleteFromDeck.java b/app/src/main/java/com/example/alex/mtgthedb/DeleteFromDeck.java
+new file mode 100644
+index 0000000..3843e34
+--- /dev/null
++++ b/app/src/main/java/com/example/alex/mtgthedb/DeleteFromDeck.java
+@@ -0,0 +1,78 @@
++package com.example.alex.mtgthedb;
++
++import android.arch.persistence.room.Room;
++import android.support.v7.app.AlertDialog;
++import android.support.v7.app.AppCompatActivity;
++import android.os.Bundle;
++import android.view.View;
++import android.widget.EditText;
++import android.widget.TextView;
++
++public class DeleteFromDeck extends AppCompatActivity {
++    DatabaseHandler db;
++    Card deleteCard;
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_delete_from_deck);
++        this.setTitle("Delete From Deck");
++
++        db = Room.databaseBuilder(this, DatabaseHandler.class, "newCards")
++                .allowMainThreadQueries()
++                .build();
++    }
++
++    public void deckDeleteSearchForCard(View view) {
++        String cardName = "";
++        final EditText editSearch = findViewById(R.id.deckDeleteNameSearch);
++        cardName = editSearch.getText().toString().toUpperCase();
++
++        try
++        {
++            deleteCard = db.cardDao().findCard(cardName);
++        }
++
++        catch(Exception e)
++        {
++            e.getCause();
++        }
++
++        if (deleteCard != null && deleteCard.getDeckQuantity() > 0)
++        {
++            String output = "Card information: \nName: " + deleteCard.getName() + "\nType: " + deleteCard.getType() + "\nPersonal Note: " + deleteCard.getNote()
++                    + "\nRed Mana: " + deleteCard.getRedMana() + "\nBlue Mana: " + deleteCard.getBlueMana() + "\nGreen Mana: " + deleteCard.getGreenMana() + "\nBlack Mana: "
++                    + deleteCard.getBlackMana() + "\nWhite Mana: " + deleteCard.getWhiteMana() + "\nColorless Mana: " + deleteCard.getColorlessMana() + "\nQuantity: " + deleteCard.getQuantity()
++                    + "\nDeck Quantity: " + deleteCard.getDeckQuantity();
++
++            TextView display = findViewById(R.id.deckCardInformation);
++            display.setText(output);
++
++            editSearch.setText("");
++        }
++
++        if (deleteCard == null || deleteCard.getDeckQuantity() == 0)
++        {
++            AlertDialog.Builder noCard = new AlertDialog.Builder(this);
++            noCard.setMessage("Card is not in the deck.");
++            noCard.setPositiveButton("OK", null);
++            AlertDialog showA = noCard.create();
++
++            showA.show();
++            editSearch.setText("");
++            return;
++        }
++    }
++
++    public void deleteCardFromDeck(View view) {
++        deleteCard.setQuantity(deleteCard.getQuantity() + deleteCard.getDeckQuantity());
++        deleteCard.setDeckQuantity(0);
++        db.cardDao().updateCard(deleteCard);
++
++        AlertDialog.Builder deleteSuccess = new AlertDialog.Builder(this);
++        deleteSuccess.setMessage("Card deleted from deck");
++        deleteSuccess.setPositiveButton("OK", null);
++        AlertDialog showM = deleteSuccess.create();
++
++        showM.show();
++    }
++}
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/MainActivity.java b/app/src/main/java/com/example/alex/mtgthedb/MainActivity.java
+index 8d5a5e2..2ee0876 100644
+--- a/app/src/main/java/com/example/alex/mtgthedb/MainActivity.java
++++ b/app/src/main/java/com/example/alex/mtgthedb/MainActivity.java
+@@ -31,7 +31,12 @@ public class MainActivity extends AppCompatActivity
+ 
+     public void browseButtonClick(View v)
+     {
+-        Intent i = new Intent(this, Browse.class);
++        Intent i = new Intent(this, reBrowse.class);
++        startActivity(i);
++    }
++
++    public void deckManagerClick(View v) {
++        Intent i = new Intent(this, DeckManager.class);
+         startActivity(i);
+     }
+ }
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/Results.java b/app/src/main/java/com/example/alex/mtgthedb/Results.java
+deleted file mode 100644
+index 8989864..0000000
+--- a/app/src/main/java/com/example/alex/mtgthedb/Results.java
++++ /dev/null
+@@ -1,17 +0,0 @@
+-package com.example.alex.mtgthedb;
+-
+-import android.support.v7.app.AppCompatActivity;
+-import android.os.Bundle;
+-
+-public class Results extends AppCompatActivity {
+-
+-    @Override
+-    protected void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        setContentView(R.layout.activity_results);
+-
+-        Browse browse = new Browse();
+-
+-        browse.printFoundCards();
+-    }
+-}
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/ShowFullDeck.java b/app/src/main/java/com/example/alex/mtgthedb/ShowFullDeck.java
+new file mode 100644
+index 0000000..0d02fe6
+--- /dev/null
++++ b/app/src/main/java/com/example/alex/mtgthedb/ShowFullDeck.java
+@@ -0,0 +1,32 @@
++package com.example.alex.mtgthedb;
++
++import android.arch.persistence.room.Room;
++import android.support.v7.app.AppCompatActivity;
++import android.os.Bundle;
++import android.support.v7.widget.LinearLayoutManager;
++import android.support.v7.widget.RecyclerView;
++
++import java.util.List;
++
++public class ShowFullDeck extends AppCompatActivity {
++    RecyclerView deckViewList;
++    RecyclerView.Adapter deckAdapter;
++    DatabaseHandler db;
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_show_full_deck);
++        this.setTitle("View Full Deck");
++
++        db = Room.databaseBuilder(this, DatabaseHandler.class, "newCards")
++                .allowMainThreadQueries()
++                .build();
++
++        List<Card> deck = db.cardDao().getAllInDeck();
++
++        deckViewList = findViewById(R.id.deckRecyclerview);
++        deckViewList.setLayoutManager(new LinearLayoutManager(this));
++        deckAdapter = new CardAdapter(deck);
++        deckViewList.setAdapter(deckAdapter);
++    }
++}
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/addToDeck.java b/app/src/main/java/com/example/alex/mtgthedb/addToDeck.java
+new file mode 100644
+index 0000000..5a90722
+--- /dev/null
++++ b/app/src/main/java/com/example/alex/mtgthedb/addToDeck.java
+@@ -0,0 +1,79 @@
++package com.example.alex.mtgthedb;
++
++import android.arch.persistence.room.Room;
++import android.support.v7.app.AlertDialog;
++import android.support.v7.app.AppCompatActivity;
++import android.os.Bundle;
++import android.view.View;
++import android.widget.EditText;
++import android.widget.TextView;
++
++public class addToDeck extends AppCompatActivity {
++    DatabaseHandler db;
++    Card foundCard;
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_add_to_deck);
++
++        db = Room.databaseBuilder(this, DatabaseHandler.class, "newCards")
++                .allowMainThreadQueries()
++                .build();
++
++    }
++
++    public void deckSearchForCard(View view) {
++        String cardName = "";
++        final EditText editSearch = findViewById(R.id.deckNameSearch);
++        cardName = editSearch.getText().toString().toUpperCase();
++
++        try
++        {
++            foundCard = db.cardDao().findCard(cardName);
++        }
++
++        catch(Exception e)
++        {
++            e.getCause();
++        }
++
++        if (foundCard != null)
++        {
++            String output = "Card information: \nName: " + foundCard.getName() + "\nType: " + foundCard.getType() + "\nPersonal Note: " + foundCard.getNote()
++                    + "\nRed Mana: " + foundCard.getRedMana() + "\nBlue Mana: " + foundCard.getBlueMana() + "\nGreen Mana: " + foundCard.getGreenMana() + "\nBlack Mana: "
++                    + foundCard.getBlackMana() + "\nWhite Mana: " + foundCard.getWhiteMana() + "\nColorless Mana: " + foundCard.getColorlessMana() + "\nQuantity: " + foundCard.getQuantity()
++                    + "\nDeck Quantity: " + foundCard.getDeckQuantity();
++
++            TextView display = findViewById(R.id.deckCardInformation);
++            display.setText(output);
++
++            editSearch.setText("");
++        }
++
++        if (foundCard == null)
++        {
++            AlertDialog.Builder noCard = new AlertDialog.Builder(this);
++            noCard.setMessage("Card does not exist in the database.");
++            noCard.setPositiveButton("OK", null);
++            AlertDialog showA = noCard.create();
++
++            showA.show();
++            editSearch.setText("");
++            return;
++        }
++    }
++
++    public void addCardToDeck(View view) {
++        foundCard.setQuantity(foundCard.getQuantity() - 1);
++        foundCard.setDeckQuantity(foundCard.getDeckQuantity() + 1);
++
++        db.cardDao().updateCard(foundCard);
++
++        AlertDialog.Builder cardAdded = new AlertDialog.Builder(this);
++        cardAdded.setMessage("Card added to deck!");
++        cardAdded.setPositiveButton("OK", null);
++        AlertDialog mShow = cardAdded.create();
++
++        mShow.show();
++    }
++}
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/bColor.java b/app/src/main/java/com/example/alex/mtgthedb/bColor.java
+new file mode 100644
+index 0000000..fb20271
+--- /dev/null
++++ b/app/src/main/java/com/example/alex/mtgthedb/bColor.java
+@@ -0,0 +1,63 @@
++package com.example.alex.mtgthedb;
++
++import android.arch.persistence.room.Database;
++import android.arch.persistence.room.Room;
++import android.content.Intent;
++import android.support.v7.app.AlertDialog;
++import android.support.v7.app.AppCompatActivity;
++import android.os.Bundle;
++import android.support.v7.widget.RecyclerView;
++import android.view.View;
++
++import java.util.ArrayList;
++import java.util.List;
++
++public class bColor extends AppCompatActivity {
++    private DatabaseHandler db;
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_b_color);
++        this.setTitle("Browse By Color");
++        db = Room.databaseBuilder(this, DatabaseHandler.class, "newCards")
++                .allowMainThreadQueries()
++                .build();
++    }
++
++    protected void bRedClicked(View view) {
++        Intent i = new Intent(this, ColorResults.class);
++        i.putExtra("color_value", 1);
++        startActivity(i);
++    }
++
++    protected void bBlueClicked(View view) {
++        Intent i = new Intent(this, ColorResults.class);
++        i.putExtra("color_value", 2);
++        startActivity(i);
++    }
++
++    protected void bGreenClicked(View view) {
++        Intent i = new Intent(this, ColorResults.class);
++        i.putExtra("color_value", 3);
++        startActivity(i);
++    }
++
++    protected void bBlackClicked(View view) {
++        Intent i = new Intent(this, ColorResults.class);
++        i.putExtra("color_value", 4);
++        startActivity(i);
++    }
++
++    protected void bWhiteClicked(View view) {
++        Intent i = new Intent(this, ColorResults.class);
++        i.putExtra("color_value", 5);
++        startActivity(i);
++    }
++
++    protected void bColorlessClicked(View view) {
++        Intent i = new Intent(this, ColorResults.class);
++        i.putExtra("color_value", 6);
++        startActivity(i);
++    }
++}
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/noteBrowseResults.java b/app/src/main/java/com/example/alex/mtgthedb/noteBrowseResults.java
+new file mode 100644
+index 0000000..9cec867
+--- /dev/null
++++ b/app/src/main/java/com/example/alex/mtgthedb/noteBrowseResults.java
+@@ -0,0 +1,43 @@
++package com.example.alex.mtgthedb;
++
++import android.arch.persistence.room.Database;
++import android.arch.persistence.room.Room;
++import android.support.v7.app.AppCompatActivity;
++import android.os.Bundle;
++import android.support.v7.widget.LinearLayoutManager;
++import android.support.v7.widget.RecyclerView;
++
++import java.util.List;
++
++public class noteBrowseResults extends AppCompatActivity {
++    RecyclerView noteViewList;
++    RecyclerView.Adapter noteAdapter;
++    DatabaseHandler db;
++
++    protected void onCreate(Bundle savedInstanceState) {
++        String passedNote = "";
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_note_browse_results);
++        this.setTitle("Note Results");
++
++        db = Room.databaseBuilder(this, DatabaseHandler.class, "newCards")
++                .allowMainThreadQueries()
++                .build();
++
++        Bundle passed = getIntent().getExtras();
++        if (passed != null) {
++            passedNote = passed.getString("note_key");
++        }
++
++        try {
++            List<Card> noteResults = db.cardDao().getAllNote(passedNote);
++            noteViewList = findViewById(R.id.recyclerview);
++            noteViewList.setLayoutManager(new LinearLayoutManager(this));
++            noteAdapter = new CardAdapter(noteResults);
++            noteViewList.setAdapter(noteAdapter);
++        }
++        catch (Exception e) {
++            e.getCause();
++        }
++    }
++}
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/reBrowse.java b/app/src/main/java/com/example/alex/mtgthedb/reBrowse.java
+new file mode 100644
+index 0000000..b644110
+--- /dev/null
++++ b/app/src/main/java/com/example/alex/mtgthedb/reBrowse.java
+@@ -0,0 +1,59 @@
++package com.example.alex.mtgthedb;
++
++import android.arch.persistence.room.Room;
++import android.content.Intent;
++import android.support.v7.app.AlertDialog;
++import android.support.v7.app.AppCompatActivity;
++import android.os.Bundle;
++import android.view.View;
++import android.widget.ArrayAdapter;
++import android.widget.EditText;
++import android.widget.Spinner;
++
++import java.util.ArrayList;
++import java.util.List;
++
++public class reBrowse extends AppCompatActivity {
++    private DatabaseHandler db;
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_re_browse);
++        this.setTitle("Browse Collection");
++        db = Room.databaseBuilder(this, DatabaseHandler.class, "newCards")
++                .allowMainThreadQueries()
++                .build();
++        Spinner typeSpinner = (Spinner) findViewById(R.id.typSpinner);
++        ArrayAdapter<CharSequence> typeAdapter = ArrayAdapter.createFromResource(this,
++                R.array.type_array, android.R.layout.simple_spinner_dropdown_item);
++        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
++        typeSpinner.setAdapter(typeAdapter);
++    }
++
++    public void browseByType(View view) {
++        Spinner browseType = findViewById(R.id.typSpinner);
++        String bType = browseType.getSelectedItem().toString();
++        //List<Card> typeCards = db.cardDao().getAllCardsType(bType);
++        Intent i = new Intent(this, typeBrowseResults.class);
++        i.putExtra("type_key", bType);
++        startActivity(i);
++
++    }
++
++    public void browseByColor(View view) {
++        Intent i = new Intent(this, bColor.class);
++        startActivity(i);
++    }
++
++    public void browseByNote(View view) {
++
++        final EditText bNote = findViewById(R.id.NoteText);
++        String nResults = bNote.getText().toString().toUpperCase();
++
++        Intent i = new Intent(this, noteBrowseResults.class);
++        i.putExtra("note_key", nResults);
++        startActivity(i);
++    }
++
++}
+diff --git a/app/src/main/java/com/example/alex/mtgthedb/typeBrowseResults.java b/app/src/main/java/com/example/alex/mtgthedb/typeBrowseResults.java
+new file mode 100644
+index 0000000..ca0b3f9
+--- /dev/null
++++ b/app/src/main/java/com/example/alex/mtgthedb/typeBrowseResults.java
+@@ -0,0 +1,41 @@
++package com.example.alex.mtgthedb;
++
++import android.arch.persistence.room.Room;
++import android.support.v7.app.AppCompatActivity;
++import android.os.Bundle;
++import android.support.v7.widget.LinearLayoutManager;
++import android.support.v7.widget.RecyclerView;
++
++import java.util.List;
++
++public class typeBrowseResults extends AppCompatActivity {
++
++    RecyclerView typeViewList;
++    RecyclerView.Adapter typeAdapter;
++    DatabaseHandler db;
++
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        String passedType = "";
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_type_browse_results);
++
++        this.setTitle("Cards by type");
++
++        db = Room.databaseBuilder(this, DatabaseHandler.class, "newCards")
++                .allowMainThreadQueries()
++                .build();
++
++        Bundle passed = getIntent().getExtras();
++        if (passed != null) {
++            passedType = passed.getString("type_key");
++        }
++
++        List<Card> typeResults = db.cardDao().getAllCardsType(passedType);
++
++        typeViewList = findViewById(R.id.recyclerview);
++        typeViewList.setLayoutManager(new LinearLayoutManager(this));
++        typeAdapter = new CardAdapter(typeResults);
++        typeViewList.setAdapter(typeAdapter);
++    }
++}
+diff --git a/app/src/main/res/layout/activity_add_card.xml b/app/src/main/res/layout/activity_add_card.xml
+index acddfb0..22599b3 100644
+--- a/app/src/main/res/layout/activity_add_card.xml
++++ b/app/src/main/res/layout/activity_add_card.xml
+@@ -41,24 +41,6 @@
+         app:layout_constraintTop_toTopOf="parent"
+         app:layout_constraintVertical_bias="0.0" />
+ 
+-    <EditText
+-        android:id="@+id/typeField"
+-        android:layout_width="337dp"
+-        android:layout_height="wrap_content"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginEnd="8dp"
+-        android:layout_marginStart="8dp"
+-        android:layout_marginTop="8dp"
+-        android:ems="10"
+-        android:hint="Card type (creature, spell, etc)"
+-        android:inputType="textPersonName"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintHorizontal_bias="0.516"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/nameField"
+-        app:layout_constraintVertical_bias="0.014" />
+-
+     <EditText
+         android:id="@+id/noteField"
+         android:layout_width="334dp"
+@@ -70,11 +52,11 @@
+         android:ems="10"
+         android:hint="Personal Note"
+         android:inputType="textPersonName"
+-        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintBottom_toTopOf="@+id/greenMana"
+         app:layout_constraintEnd_toEndOf="parent"
+         app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/typeField"
+-        app:layout_constraintVertical_bias="0.017" />
++        app:layout_constraintTop_toBottomOf="@+id/typeSpinner"
++        app:layout_constraintVertical_bias="0.957" />
+ 
+     <EditText
+         android:id="@+id/redMana"
+@@ -206,4 +188,19 @@
+         app:layout_constraintHorizontal_bias="0.444"
+         app:layout_constraintStart_toStartOf="parent" />
+ 
++    <Spinner
++        android:id="@+id/typeSpinner"
++        android:layout_width="343dp"
++        android:layout_height="35dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.68"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.234" />
++
+ </android.support.constraint.ConstraintLayout>
+diff --git a/app/src/main/res/layout/activity_add_to_deck.xml b/app/src/main/res/layout/activity_add_to_deck.xml
+new file mode 100644
+index 0000000..1a4ff4c
+--- /dev/null
++++ b/app/src/main/res/layout/activity_add_to_deck.xml
+@@ -0,0 +1,75 @@
++<?xml version="1.0" encoding="utf-8"?>
++<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    tools:context="com.example.alex.mtgthedb.addToDeck">
++
++    <Button
++        android:id="@+id/deckSearch"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="deckSearchForCard"
++        android:text="Search"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.821"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.288" />
++
++    <EditText
++        android:id="@+id/deckNameSearch"
++        android:layout_width="284dp"
++        android:layout_height="55dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginTop="8dp"
++        android:ems="10"
++        android:hint="Search By Name"
++        android:inputType="textPersonName"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.5"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.081" />
++
++    <Button
++        android:id="@+id/addToDeck"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="addCardToDeck"
++        android:text="Add"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.821"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toBottomOf="@+id/startSearch"
++        app:layout_constraintVertical_bias="0.927" />
++
++    <TextView
++        android:id="@+id/deckCardInformation"
++        android:layout_width="354dp"
++        android:layout_height="216dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:text="Card Information"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.5"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.695" />
++
++</android.support.constraint.ConstraintLayout>
+diff --git a/app/src/main/res/layout/activity_b_color.xml b/app/src/main/res/layout/activity_b_color.xml
+new file mode 100644
+index 0000000..87fe678
+--- /dev/null
++++ b/app/src/main/res/layout/activity_b_color.xml
+@@ -0,0 +1,110 @@
++<?xml version="1.0" encoding="utf-8"?>
++<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    tools:context="com.example.alex.mtgthedb.bColor">
++
++    <Button
++        android:id="@+id/blueButton"
++        android:layout_width="112dp"
++        android:layout_height="80dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="bBlueClicked"
++        android:text="Blue"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.226"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.214" />
++
++    <Button
++        android:id="@+id/redButton"
++        android:layout_width="112dp"
++        android:layout_height="80dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="bRedClicked"
++        android:text="Red"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.828"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.214" />
++
++    <Button
++        android:id="@+id/greenButton"
++        android:layout_width="112dp"
++        android:layout_height="80dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="bGreenClicked"
++        android:text="Green"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.226"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.536" />
++
++    <Button
++        android:id="@+id/whiteButton"
++        android:layout_width="112dp"
++        android:layout_height="80dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="bWhiteClicked"
++        android:text="White"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.828"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.536" />
++
++    <Button
++        android:id="@+id/colorlessButton"
++        android:layout_width="112dp"
++        android:layout_height="80dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="bColorlessClicked"
++        android:text="Colorless"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.226"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.85" />
++
++    <Button
++        android:id="@+id/blackButton"
++        android:layout_width="112dp"
++        android:layout_height="80dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="bBlackClicked"
++        android:text="Black"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.828"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.85" />
++</android.support.constraint.ConstraintLayout>
+diff --git a/app/src/main/res/layout/activity_browse.xml b/app/src/main/res/layout/activity_browse.xml
+deleted file mode 100644
+index 5c1b880..0000000
+--- a/app/src/main/res/layout/activity_browse.xml
++++ /dev/null
+@@ -1,169 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+-    xmlns:app="http://schemas.android.com/apk/res-auto"
+-    xmlns:tools="http://schemas.android.com/tools"
+-    android:layout_width="match_parent"
+-    android:layout_height="match_parent"
+-    tools:context="com.example.alex.mtgthedb.Browse">
+-
+-    <Button
+-        android:id="@+id/button"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginEnd="8dp"
+-        android:layout_marginStart="8dp"
+-        android:layout_marginTop="8dp"
+-        android:onClick="browseClicked"
+-        android:text="Browse"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintHorizontal_bias="0.892"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toTopOf="parent"
+-        app:layout_constraintVertical_bias="0.917" />
+-
+-    <EditText
+-        android:id="@+id/nameBrowse"
+-        android:layout_width="337dp"
+-        android:layout_height="wrap_content"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginTop="8dp"
+-        android:ems="10"
+-        android:hint="Search By Name"
+-        android:inputType="textPersonName"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintHorizontal_bias="0.5"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toTopOf="parent"
+-        app:layout_constraintVertical_bias="0.075" />
+-
+-    <EditText
+-        android:id="@+id/noteBrowse"
+-        android:layout_width="337dp"
+-        android:layout_height="wrap_content"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginEnd="8dp"
+-        android:layout_marginStart="8dp"
+-        android:layout_marginTop="8dp"
+-        android:ems="10"
+-        android:hint="Search By Note"
+-        android:inputType="textPersonName"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintHorizontal_bias="0.5"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/nameBrowse"
+-        app:layout_constraintVertical_bias="0.008" />
+-
+-    <Spinner
+-        android:id="@+id/typeSpinner"
+-        android:layout_width="145dp"
+-        android:layout_height="57dp"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginEnd="8dp"
+-        android:layout_marginStart="8dp"
+-        android:layout_marginTop="8dp"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintHorizontal_bias="0.5"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toTopOf="parent"
+-        app:layout_constraintVertical_bias="0.376" />
+-
+-    <CheckBox
+-        android:id="@+id/checkWhite"
+-        android:layout_width="102dp"
+-        android:layout_height="52dp"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginStart="16dp"
+-        android:layout_marginTop="8dp"
+-        android:checked="false"
+-        android:text="White"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toTopOf="parent"
+-        app:layout_constraintVertical_bias="0.55"
+-        tools:text="White" />
+-
+-    <CheckBox
+-        android:id="@+id/checkGreen"
+-        android:layout_width="102dp"
+-        android:layout_height="52dp"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginTop="8dp"
+-        android:text="Green"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintEnd_toStartOf="@+id/checkBox3"
+-        app:layout_constraintHorizontal_bias="0.5"
+-        app:layout_constraintStart_toEndOf="@+id/checkWhite"
+-        app:layout_constraintTop_toTopOf="parent"
+-        app:layout_constraintVertical_bias="0.55"
+-        tools:text="Green" />
+-
+-    <CheckBox
+-        android:id="@+id/checkBlue"
+-        android:layout_width="102dp"
+-        android:layout_height="52dp"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginEnd="16dp"
+-        android:layout_marginStart="8dp"
+-        android:layout_marginTop="8dp"
+-        android:text="Blue"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintHorizontal_bias="0.0"
+-        app:layout_constraintStart_toEndOf="@+id/checkGreen"
+-        app:layout_constraintTop_toTopOf="parent"
+-        app:layout_constraintVertical_bias="0.55"
+-        tools:text="Blue" />
+-
+-    <CheckBox
+-        android:id="@+id/checkRed"
+-        android:layout_width="102dp"
+-        android:layout_height="52dp"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginStart="16dp"
+-        android:layout_marginTop="8dp"
+-        android:text="Red"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/checkWhite"
+-        app:layout_constraintVertical_bias="0.172"
+-        tools:text="Red" />
+-
+-    <CheckBox
+-        android:id="@+id/checkBlack"
+-        android:layout_width="102dp"
+-        android:layout_height="52dp"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginTop="8dp"
+-        android:text="Black"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintEnd_toStartOf="@+id/checkBox6"
+-        app:layout_constraintHorizontal_bias="0.5"
+-        app:layout_constraintStart_toEndOf="@+id/checkRed"
+-        app:layout_constraintTop_toBottomOf="@+id/checkGreen"
+-        app:layout_constraintVertical_bias="0.172"
+-        tools:text="Black" />
+-
+-    <CheckBox
+-        android:id="@+id/checkColorless"
+-        android:layout_width="102dp"
+-        android:layout_height="52dp"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginEnd="8dp"
+-        android:layout_marginStart="8dp"
+-        android:layout_marginTop="8dp"
+-        android:text="Colorless"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintHorizontal_bias="0.0"
+-        app:layout_constraintStart_toEndOf="@+id/checkBlack"
+-        app:layout_constraintTop_toBottomOf="@+id/checkBlue"
+-        app:layout_constraintVertical_bias="0.172"
+-        tools:text="Colorless" />
+-
+-</android.support.constraint.ConstraintLayout>
+diff --git a/app/src/main/res/layout/activity_color_results.xml b/app/src/main/res/layout/activity_color_results.xml
+new file mode 100644
+index 0000000..cbee7be
+--- /dev/null
++++ b/app/src/main/res/layout/activity_color_results.xml
+@@ -0,0 +1,18 @@
++<?xml version="1.0" encoding="utf-8"?>
++<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    tools:context="com.example.alex.mtgthedb.ColorResults">
++
++    <android.support.v7.widget.RecyclerView
++        android:id="@+id/recyclerview"
++        android:layout_width="0dp"
++        android:layout_height="0dp"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintLeft_toLeftOf="parent"
++        app:layout_constraintRight_toRightOf = "parent"/>
++
++</android.support.constraint.ConstraintLayout>
+diff --git a/app/src/main/res/layout/activity_deck_manager.xml b/app/src/main/res/layout/activity_deck_manager.xml
+new file mode 100644
+index 0000000..e2eb526
+--- /dev/null
++++ b/app/src/main/res/layout/activity_deck_manager.xml
+@@ -0,0 +1,60 @@
++<?xml version="1.0" encoding="utf-8"?>
++<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    tools:context="com.example.alex.mtgthedb.DeckManager">
++
++    <Button
++        android:id="@+id/addToDeckButton"
++        android:layout_width="161dp"
++        android:layout_height="120dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="addToDeckButton"
++        android:text="Add Card"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.091"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.093" />
++
++    <Button
++        android:id="@+id/deleteFromDeckButton"
++        android:layout_width="161dp"
++        android:layout_height="120dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="deleteFromDeckButton"
++        android:text="Delete Card"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.578"
++        app:layout_constraintStart_toEndOf="@+id/cardButton"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.093" />
++
++    <Button
++        android:id="@+id/browseButton"
++        android:layout_width="161dp"
++        android:layout_height="120dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="viewDeckButton"
++        android:text="View Deck"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.09"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toBottomOf="@+id/addToDeckButton"
++        app:layout_constraintVertical_bias="0.097" />
++
++</android.support.constraint.ConstraintLayout>
+diff --git a/app/src/main/res/layout/activity_delete_from_deck.xml b/app/src/main/res/layout/activity_delete_from_deck.xml
+new file mode 100644
+index 0000000..ad7ee37
+--- /dev/null
++++ b/app/src/main/res/layout/activity_delete_from_deck.xml
+@@ -0,0 +1,76 @@
++<?xml version="1.0" encoding="utf-8"?>
++<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    tools:context="com.example.alex.mtgthedb.DeleteFromDeck">
++
++    <Button
++        android:id="@+id/deckDeleteSearch"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="deckDeleteSearchForCard"
++        android:text="Search"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.821"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.288" />
++
++    <EditText
++        android:id="@+id/deckDeleteNameSearch"
++        android:layout_width="284dp"
++        android:layout_height="55dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginTop="8dp"
++        android:ems="10"
++        android:hint="Search By Name"
++        android:inputType="textPersonName"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.5"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.081" />
++
++
++    <Button
++        android:id="@+id/deleteFromDeck"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="deleteCardFromDeck"
++        android:text="Delete"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.821"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toBottomOf="@+id/startSearch"
++        app:layout_constraintVertical_bias="0.927" />
++
++    <TextView
++        android:id="@+id/deckCardInformation"
++        android:layout_width="354dp"
++        android:layout_height="216dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:text="Card Information"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.5"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.695" />
++
++</android.support.constraint.ConstraintLayout>
+diff --git a/app/src/main/res/layout/activity_main.xml b/app/src/main/res/layout/activity_main.xml
+index 5d463d2..41c4eef 100644
+--- a/app/src/main/res/layout/activity_main.xml
++++ b/app/src/main/res/layout/activity_main.xml
+@@ -57,4 +57,21 @@
+         app:layout_constraintTop_toBottomOf="@+id/cardButton"
+         app:layout_constraintVertical_bias="0.097" />
+ 
++    <Button
++        android:id="@+id/deckManager"
++        android:layout_width="161dp"
++        android:layout_height="120dp"
++        android:layout_marginBottom="24dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="deckManagerClick"
++        android:text="Deck Manager"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.578"
++        app:layout_constraintStart_toEndOf="@+id/browseButton"
++        app:layout_constraintTop_toBottomOf="@+id/deleteButton"
++        app:layout_constraintVertical_bias="0.107" />
++
+ </android.support.constraint.ConstraintLayout>
+diff --git a/app/src/main/res/layout/activity_note_browse_results.xml b/app/src/main/res/layout/activity_note_browse_results.xml
+new file mode 100644
+index 0000000..7d9e924
+--- /dev/null
++++ b/app/src/main/res/layout/activity_note_browse_results.xml
+@@ -0,0 +1,18 @@
++<?xml version="1.0" encoding="utf-8"?>
++<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    tools:context="com.example.alex.mtgthedb.noteBrowseResults">
++
++    <android.support.v7.widget.RecyclerView
++        android:id="@+id/recyclerview"
++        android:layout_width="0dp"
++        android:layout_height="0dp"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintLeft_toLeftOf="parent"
++        app:layout_constraintRight_toRightOf = "parent"/>
++
++</android.support.constraint.ConstraintLayout>
+diff --git a/app/src/main/res/layout/activity_re_browse.xml b/app/src/main/res/layout/activity_re_browse.xml
+new file mode 100644
+index 0000000..cbc415f
+--- /dev/null
++++ b/app/src/main/res/layout/activity_re_browse.xml
+@@ -0,0 +1,87 @@
++<?xml version="1.0" encoding="utf-8"?>
++<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    tools:context="com.example.alex.mtgthedb.reBrowse">
++
++    <Button
++        android:id="@+id/coBrowse"
++        android:layout_width="135dp"
++        android:layout_height="81dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="browseByColor"
++        android:text="Browse By Color"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.502"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.183" />
++
++    <Spinner
++        android:id="@+id/typSpinner"
++        android:layout_width="192dp"
++        android:layout_height="65dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.045"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent" />
++
++    <Button
++        android:id="@+id/typBrowse"
++        android:layout_width="wrap_content"
++        android:layout_height="57dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="browseByType"
++        android:text="Browse By Type"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.965"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent" />
++
++    <EditText
++        android:id="@+id/NoteText"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginBottom="8dp"
++        android:layout_marginTop="8dp"
++        android:ems="10"
++        android:hint="Note"
++        android:inputType="textPersonName"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.573"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.739" />
++
++    <Button
++        android:id="@+id/noBrowse"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:onClick="browseByNote"
++        android:text="Browse By Note"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.502"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.885" />
++
++</android.support.constraint.ConstraintLayout>
+diff --git a/app/src/main/res/layout/activity_results.xml b/app/src/main/res/layout/activity_results.xml
+deleted file mode 100644
+index 91fc04d..0000000
+--- a/app/src/main/res/layout/activity_results.xml
++++ /dev/null
+@@ -1,9 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+-    xmlns:app="http://schemas.android.com/apk/res-auto"
+-    xmlns:tools="http://schemas.android.com/tools"
+-    android:layout_width="match_parent"
+-    android:layout_height="match_parent"
+-    tools:context="com.example.alex.mtgthedb.Results">
+-
+-</android.support.constraint.ConstraintLayout>
+diff --git a/app/src/main/res/layout/activity_show_full_deck.xml b/app/src/main/res/layout/activity_show_full_deck.xml
+new file mode 100644
+index 0000000..bd56132
+--- /dev/null
++++ b/app/src/main/res/layout/activity_show_full_deck.xml
+@@ -0,0 +1,19 @@
++<?xml version="1.0" encoding="utf-8"?>
++<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    tools:context="com.example.alex.mtgthedb.ShowFullDeck">
++
++
++    <android.support.v7.widget.RecyclerView
++        android:id="@+id/deckRecyclerview"
++        android:layout_width="0dp"
++        android:layout_height="0dp"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintLeft_toLeftOf="parent"
++        app:layout_constraintRight_toRightOf = "parent"/>
++
++</android.support.constraint.ConstraintLayout>
+diff --git a/app/src/main/res/layout/activity_type_browse_results.xml b/app/src/main/res/layout/activity_type_browse_results.xml
+new file mode 100644
+index 0000000..261546a
+--- /dev/null
++++ b/app/src/main/res/layout/activity_type_browse_results.xml
+@@ -0,0 +1,18 @@
++<?xml version="1.0" encoding="utf-8"?>
++<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    tools:context="com.example.alex.mtgthedb.typeBrowseResults">
++
++    <android.support.v7.widget.RecyclerView
++        android:id="@+id/recyclerview"
++        android:layout_width="0dp"
++        android:layout_height="0dp"
++
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintLeft_toLeftOf="parent"
++        app:layout_constraintRight_toRightOf = "parent"/>
++</android.support.constraint.ConstraintLayout>
+diff --git a/app/src/main/res/layout/card_row.xml b/app/src/main/res/layout/card_row.xml
+new file mode 100644
+index 0000000..a74d7fb
+--- /dev/null
++++ b/app/src/main/res/layout/card_row.xml
+@@ -0,0 +1,12 @@
++<?xml version="1.0" encoding="utf-8"?>
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:orientation="vertical"
++    android:layout_width="match_parent"
++    android:layout_height="wrap_content">
++    
++    <TextView
++        android:id="@+id/FCardName"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content" />
++
++</LinearLayout>
+\ No newline at end of file
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 5d54bd6..8b7d2f1 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -2,10 +2,11 @@
+     <string name="app_name">MtG: The DB</string>
+     <string-array name="type_array">
+         <item>None</item>
+-        <item>Creature</item>
+-        <item>Enchant</item>
+-        <item>Spell</item>
+-        <item>Artifact</item>
+-        <item>Mana</item>
++        <item>CREATURE</item>
++        <item>ENCHANT</item>
++        <item>SORCERY</item>
++        <item>INSTANT</item>
++        <item>ARTIFACT</item>
++        <item>MANA</item>
+     </string-array>
+ </resources>
+diff --git a/mtgAgileProjectDoc.docx b/mtgAgileProjectDoc.docx
+index b292e30..ba23754 100644
+Binary files a/mtgAgileProjectDoc.docx and b/mtgAgileProjectDoc.docx differ

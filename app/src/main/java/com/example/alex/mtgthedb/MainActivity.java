@@ -6,15 +6,20 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.content.Intent;
+import android.widget.TextView;
 
 
 public class MainActivity extends AppCompatActivity
 {
+    int life = 20;
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        TextView Life = findViewById(R.id.lifeTextView);
+        Life.setText(String.valueOf(life));
+
     }
 
     public void cardButtonClick(View v)
@@ -38,6 +43,18 @@ public class MainActivity extends AppCompatActivity
     public void deckManagerClick(View v) {
         Intent i = new Intent(this, DeckManager.class);
         startActivity(i);
+    }
+
+    public void upClicked(View v) {
+        ++life;
+        TextView Life = findViewById(R.id.lifeTextView);
+        Life.setText(String.valueOf(life));
+    }
+
+    public void downClicked(View v) {
+        --life;
+        TextView Life = findViewById(R.id.lifeTextView);
+        Life.setText(String.valueOf(life));
     }
 }
 
